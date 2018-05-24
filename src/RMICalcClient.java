@@ -1,42 +1,71 @@
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Serializable;
 import java.net.MalformedURLException;
 import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
-import java.rmi.registry.LocateRegistry;
+import java.util.Scanner;
+import java.util.function.Function;
 
 public class RMICalcClient {
-    static final int PORT = 6666;
-    static final String SERVER_ADRESS = "127.0.0.1";
 
-    private RmiComputable _computeStub;
-
+    private UserInputRetriever _userInputRetriever;
 
     public static void main(String[] ar) throws IOException {
         try {
-            new RMICalcClient(PORT, SERVER_ADRESS).beARMICalcClient();
+            new RMICalcClient().beARMICalcClient();
         } catch (NotBoundException e) {
             e.printStackTrace();
         }
-
     }
 
-    protected RMICalcClient(int serverPort, String serverAddress) throws IOException {
+    public RMICalcClient() {
+        _userInputRetriever = new UserInputRetriever();
     }
 
-    private void beARMICalcClient() throws RemoteException, NotBoundException, MalformedURLException {
-        doCalcOnRemote();
+    public void beARMICalcClient() throws IOException, NotBoundException {
+
+        var func = getFunctionFromUser();
+        int a = 0;
+        int b = 1;
+
+        double res = calculateIntegralRemotely(func, a, b);
+        System.out.println("and the result is: " + res);
     }
 
-    private void doCalcOnRemote() throws RemoteException, NotBoundException, MalformedURLException {
+    private double calculateIntegralRemotely(
+            SerializableFunction<Double, Double> f, double a, double b)
+            throws RemoteException, NotBoundException, MalformedURLException {
         // add security manager
 
-//        var registry = LocateRegistry.getRegistry(SERVER_ADRESS, PORT);
+//        Runnable lambda = f;
         // gets stub only
-        var comp = (RmiComputable) Naming.lookup(RMICalcServer.STUB_ADRESS);
+        var integralCalulable = (RemoteIntegralCalulable) Naming.lookup(RMICalcServer.STUB_ADRESS);
 
-        var task = new Worker();
-        String pi = comp.executeTask(task);
-        System.out.println(pi);
+        return integralCalulable.integrate(f, a, b);
+    }
+
+    private SerializableFunction<Double, Double> getFunctionFromUser() throws IOException {
+
+        return _userInputRetriever.GetValueFromUser(
+                "Quick! Sine or Cosine?!",
+                this::parseUserInputAsFunctionName,
+                "Didn't get that. Try again:"
+                );
+    }
+
+    private SerializableFunction<Double, Double> parseUserInputAsFunctionName(String userLine) {
+
+        if(userLine.equals("s") || userLine.toLowerCase().contains("sin")) {
+            return (Math::sin);
+
+        } else if (userLine.equals("c") || userLine.toLowerCase().contains("cos")) {
+            return Math::cos;
+
+        } else {
+            return null;
+        }
     }
 }
