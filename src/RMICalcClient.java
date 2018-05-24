@@ -1,38 +1,42 @@
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.net.Socket;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
-import java.rmi.registry.Registry;
 
-public class RMICalcClient extends ClientBase {
-    static final int port = 6666;
-    static final String serverAddress = "127.0.0.1";
+public class RMICalcClient {
+    static final int PORT = 6666;
+    static final String SERVER_ADRESS = "127.0.0.1";
+
+    private RmiComputable _computeStub;
 
 
     public static void main(String[] ar) throws IOException {
-        new RMICalcClient(port, serverAddress).beARMICalcClient();
+        try {
+            new RMICalcClient(PORT, SERVER_ADRESS).beARMICalcClient();
+        } catch (NotBoundException e) {
+            e.printStackTrace();
+        }
 
     }
 
     protected RMICalcClient(int serverPort, String serverAddress) throws IOException {
-        super(serverPort, serverAddress);
     }
 
-    private void beARMICalcClient() {
+    private void beARMICalcClient() throws RemoteException, NotBoundException, MalformedURLException {
+        doCalcOnRemote();
     }
 
-    private void doCalcOnRemote() throws RemoteException, NotBoundException {
+    private void doCalcOnRemote() throws RemoteException, NotBoundException, MalformedURLException {
+        // add security manager
 
-        // add security security manager
-
-        var registry = LocateRegistry.getRegistry(RMICalcServer.PORT);
-        var comp = (Compute) registry.lookup(RMICalcServer.REGISTRY_NAME);
+//        var registry = LocateRegistry.getRegistry(SERVER_ADRESS, PORT);
+        // gets stub only
+        var comp = (RmiComputable) Naming.lookup(RMICalcServer.STUB_ADRESS);
 
         var task = new Worker();
         String pi = comp.executeTask(task);
         System.out.println(pi);
     }
-
 }

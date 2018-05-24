@@ -1,45 +1,40 @@
-import java.io.IOException;
-import java.net.ServerSocket;
+import java.net.MalformedURLException;
+import java.rmi.Naming;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.rmi.server.UnicastRemoteObject;
 
 public class RMICalcServer {
 
-    public static final String REGISTRY_NAME = "Compute";
+    public static final String STUB_ADRESS = "rmi://localhost/ABC";
+
+    static final String LOCALHOST = "127.0.0.1";
     public static final int PORT = 6666;
 
-    private ServerSocket _serverSocket;
+//    private Registry _registry;
 
     public static void main(String[] args) {
         try {
             new RMICalcServer().serve();
-        } catch (IOException e) {
+        } catch (Exception e) {
+            System.err.println("RmiComputableEngine exception:");
             e.printStackTrace();
         }
     }
 
-
-    public RMICalcServer() throws IOException {
-        _serverSocket = new ServerSocket(PORT);
-    }
-
-    public void serve()
-    {
+    public void serve() throws RemoteException, MalformedURLException {
         // add security security manager
 
-        try {
-            var engine = new ComputeEngine();
-            var stub =
-                    (Compute) UnicastRemoteObject.exportObject(engine, 0);
+        System.setProperty("java.rmi.server.hostname", "localhost");
 
-            var registry = LocateRegistry.getRegistry();
-            registry.rebind(REGISTRY_NAME, stub);
-            System.out.println("ComputeEngine bound");
+        var engine = new RmiComputableEngine();
+        var stub = (RmiComputable) UnicastRemoteObject.exportObject(engine, 0);
 
-        } catch (Exception e) {
-            System.err.println("ComputeEngine exception:");
-            e.printStackTrace();
-        }
+//         _registry = LocateRegistry.getRegistry();
+
+//         _registry.rebind(STUB_ADRESS, stub);
+        Naming.rebind(STUB_ADRESS, stub);
+        System.out.println("RmiComputableEngine bound");
     }
 }
