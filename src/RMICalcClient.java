@@ -37,10 +37,9 @@ public class RMICalcClient {
 
     private double calculateIntegralRemotely(
             SerializableFunction<Double, Double> f, double a, double b)
-            throws RemoteException, NotBoundException, MalformedURLException {
+throws RemoteException, NotBoundException, MalformedURLException {
         // add security manager
 
-//        Runnable lambda = f;
         // gets stub only
         var integralCalulable = (RemoteIntegralCalulable) Naming.lookup(RMICalcServer.STUB_ADRESS);
 
